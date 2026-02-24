@@ -4,6 +4,12 @@ A classic checkers (draughts) game for the Flipper Zero.
 
 ---
 
+## Credits
+
+This was inspired and based off of [Flipper Chess](https://github.com/xtruan/flipper-chess) by [xtruan](https://github.com/xtruan)
+
+---
+
 ## Features
 
 - Play against a friend or a CPU opponent
