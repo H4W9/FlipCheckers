@@ -2,8 +2,6 @@ name: "FAP Build & Release"
 on:
   workflow_dispatch: 
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches:
       - main
   pull_request:
@@ -52,6 +50,16 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Extract version from application.fam
+        id: get-version
+        run: |
+          VERSION=$(grep -oP '(?<=fap_version=\()\d+,\s*\d+' application.fam | tr -d ' ' | tr ',' '.')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION}"
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -61,12 +69,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          name: "Release ${{ github.sha }}"
-          tag_name: Get Tag  # "draft-${{ github.sha }}"
+          name: "FlipCheckers v${{ steps.get-version.outputs.version }}"
+          tag_name: "v${{ steps.get-version.outputs.version }}"
           files: artifacts/**/*
           body: |
-            Release from commit ${{ github.sha }}.
+            ## FlipCheckers v${{ steps.get-version.outputs.version }}
 
-            Built for:
-            - Official firmware (dev & release channels)
-            - Unleashed firmware (dev & release channels)
+            Built from commit ${{ github.sha }}.
+
+            ### Firmware builds included:
+            - 🐬 Official firmware — dev channel
+            - 🐬 Official firmware — release channel
+            - 🔓 Unleashed firmware — dev channel
+            - 🔓 Unleashed firmware — release channel
+
+            ### Installation
+            Copy the `.fap` file matching your firmware to `SD Card/apps/Games/` on your Flipper Zero.
