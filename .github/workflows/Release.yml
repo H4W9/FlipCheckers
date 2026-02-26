@@ -1,44 +1,72 @@
-name: Release
-
+name: "FAP Build & Release"
 on:
+  workflow_dispatch: 
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-
-env:
-  firmware_version: '1.1.2'
-
+    branches:
+      - main
+  pull_request:
+  #schedule:
+    # do a build every day
+  #  - cron: "1 1 * * *"
 jobs:
-  build:
-    name: Build
+  ufbt-build-action:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: dev channel
+            sdk-channel: dev
+          - name: release channel
+            sdk-channel: release
+          - name: Unleashed dev
+            sdk-index-url: https://up.unleashedflip.com/directory.json
+            sdk-channel: dev
+          - name: Unleashed release
+            sdk-index-url: https://up.unleashedflip.com/directory.json
+            sdk-channel: release
+    name: 'ufbt: Build for ${{ matrix.name }}'
     steps:
-      - name: Checkout Flipper Zero Firmware
+      - name: Checkout
         uses: actions/checkout@v3
         with:
-          repository: 'flipperdevices/flipperzero-firmware'
-          ref: ${{ env.firmware_version }}
-          submodules: true
-      - name: Checkout flipper-checkers
-        uses: actions/checkout@v3
+          submodules: recursive
+      - name: Build with ufbt
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1.2
+        id: build-app
         with:
-          path: 'applications_user/flipper-checkers'
-      - name: Build FAPs
-        run: ./fbt COMPACT=1 DEBUG=0 faps
-      - name: Check flipper-checkers Built
-        run: test -f build/f7-firmware-C/.extapps/checkers.fap
-      - name: Get Tag
-        id: tag
-        uses: dawidd6/action-get-tag@v1
+          sdk-channel: ${{ matrix.sdk-channel }}
+          sdk-index-url: ${{ matrix.sdk-index-url }}
+      - name: Upload app artifacts
+        uses: actions/upload-artifact@v4
         with:
-          strip_v: false
-      - name: Publish flipper-checkers
-        uses: softprops/action-gh-release@v1
+          name: ${{ github.event.repository.name }}-${{ steps.build-app.outputs.suffix }}
+          path: ${{ steps.build-app.outputs.fap-artifacts }}
+
+  create-draft-release:
+    runs-on: ubuntu-latest
+    needs: ufbt-build-action
+    # Only create a draft release on pushes to main, not on PRs
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          files: |
-            build/f7-firmware-C/.extapps/checkers.fap
-            applications_user/flipper-checkers/README.md
-          name: ${{steps.tag.outputs.tag}}
-          body: Built against Flipper Zero firmware v${{ env.firmware_version }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+          path: artifacts/
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: "Release ${{ github.sha }}"
+          tag_name: Get Tag  # "draft-${{ github.sha }}"
+          files: artifacts/**/*
+          body: |
+            Release from commit ${{ github.sha }}.
+
+            Built for:
+            - Official firmware (dev & release channels)
+            - Unleashed firmware (dev & release channels)
