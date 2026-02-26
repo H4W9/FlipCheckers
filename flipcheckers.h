@@ -35,6 +35,7 @@ typedef struct {
     FlipCheckersScene1* flipcheckers_scene_1;
     // Settings options
     int haptic;
+    int sound;
     int white_mode;
     int black_mode;
     int must_jump;
@@ -66,6 +67,11 @@ typedef enum {
 } FlipCheckersHapticState;
 
 typedef enum {
+    FlipCheckersSoundOff,
+    FlipCheckersSoundOn,
+} FlipCheckersSoundState;
+
+typedef enum {
     FlipCheckersPlayerHuman = 0,
     FlipCheckersPlayerAI1 = 1,
     FlipCheckersPlayerAI2 = 2,
@@ -76,6 +82,9 @@ typedef enum {
     FlipCheckersTextInputDefault,
     FlipCheckersTextInputGame
 } FlipCheckersTextInputState;
+
+void flipcheckers_save_settings(FlipCheckers* app);
+void flipcheckers_load_settings(FlipCheckers* app);
 
 typedef enum {
     FlipCheckersStatusNone = 0,

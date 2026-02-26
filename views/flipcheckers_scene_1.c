@@ -7,6 +7,7 @@
 //#include <dolphin/dolphin.h>
 #include <string.h>
 #include "../helpers/flipcheckers_haptic.h"
+#include "../helpers/flipcheckers_sound.h"
 
 #define XBOARD_DEBUG 0
 
@@ -304,7 +305,7 @@ uint8_t flipcheckers_turn(FlipCheckersScene1Model* model) {
 
         switch(model->game.state) {
         case SCL_GAME_STATE_WHITE_WIN:
-            model->msg = "red wins";
+            model->msg = "white wins";
             model->paramExit = FlipCheckersStatusReturn;
             break;
 
@@ -343,9 +344,9 @@ uint8_t flipcheckers_turn(FlipCheckersScene1Model* model) {
                 const uint8_t whitesTurn = SCL_boardWhitesTurn(model->game.board);
 
                 if(SCL_boardCheck(model->game.board, whitesTurn)) {
-                    model->msg = (whitesTurn ? "black: forced!" : "red: forced!");
+                    model->msg = (whitesTurn ? "black: forced!" : "white: forced!");
                 } else {
-                    model->msg = (whitesTurn ? "black played" : "red played");
+                    model->msg = (whitesTurn ? "black played" : "white played");
                 }
 
                 uint8_t s0, s1;
@@ -401,6 +402,34 @@ void flipcheckers_scene_1_draw(Canvas* canvas, FlipCheckersScene1Model* model) {
             if(!picture[x + (y * SCL_BOARD_PICTURE_WIDTH)]) {
                 canvas_draw_dot(canvas, x + 1, y);
             }
+        }
+    }
+
+    // End-of-game banner
+    if(model->paramExit == FlipCheckersStatusReturn) {
+        const char* banner_text = NULL;
+        bool white_human = (model->paramPlayerW == 0);
+        bool black_human = (model->paramPlayerB == 0);
+
+        if(model->game.state == SCL_GAME_STATE_WHITE_WIN) {
+            if(white_human && !black_human) banner_text = "You Win!";
+            else if(!white_human && black_human) banner_text = "You Lose!";
+            else banner_text = "White Wins!";
+        } else if(model->game.state == SCL_GAME_STATE_BLACK_WIN) {
+            if(black_human && !white_human) banner_text = "You Win!";
+            else if(!black_human && white_human) banner_text = "You Lose!";
+            else banner_text = "Black Wins!";
+        } else {
+            banner_text = "Draw!";
+        }
+
+        if(banner_text) {
+            canvas_set_color(canvas, ColorBlack);
+            canvas_draw_rbox(canvas, 0, 22, 128, 20, 4);
+            canvas_set_color(canvas, ColorWhite);
+            canvas_set_font(canvas, FontPrimary);
+            canvas_draw_str_aligned(canvas, 64, 32, AlignCenter, AlignCenter, banner_text);
+            canvas_set_color(canvas, ColorBlack);
         }
     }
 }
@@ -520,7 +549,7 @@ static int flipcheckers_scene_1_model_init(
         return FlipCheckersStatusReturn;
     }
 
-    model->msg = (SCL_boardWhitesTurn(model->game.board) ? "red to move" : "black to move");
+    model->msg = (SCL_boardWhitesTurn(model->game.board) ? "white to move" : "black to move");
 
     // 0 = success
     return FlipCheckersStatusNone;
@@ -628,8 +657,14 @@ bool flipcheckers_scene_1_input(InputEvent* event, void* context) {
                 FlipCheckersScene1Model * model,
                 {
                     // first turn of round, probably player but could be AI
-                    if(flipcheckers_turn(model) == FlipCheckersStatusReturn) {
+                    uint8_t turn_res = flipcheckers_turn(model);
+                    if(turn_res == FlipCheckersStatusReturn) {
                         flipcheckers_play_long_bump(app);
+                        flipcheckers_play_game_end_sound(
+                            app, model->game.state, model->paramPlayerW, model->paramPlayerB);
+                    } else if(turn_res == FlipCheckersStatusMovePlayer ||
+                              turn_res == FlipCheckersStatusMoveAI) {
+                        flipcheckers_play_move_beep(app);
                     }
                     flipcheckers_saveState(app, model);
                     flipcheckers_drawBoard(model);
@@ -654,10 +689,14 @@ bool flipcheckers_scene_1_input(InputEvent* event, void* context) {
                 {
                     while(!flipcheckers_isPlayerTurn(model) &&
                           model->game.state == SCL_GAME_STATE_PLAYING) {
-                        if(flipcheckers_turn(model) == FlipCheckersStatusReturn) {
+                        uint8_t ai_res = flipcheckers_turn(model);
+                        if(ai_res == FlipCheckersStatusReturn) {
                             flipcheckers_play_long_bump(app);
+                            flipcheckers_play_game_end_sound(
+                                app, model->game.state, model->paramPlayerW, model->paramPlayerB);
                             break;
                         }
+                        flipcheckers_play_move_beep(app);
                         flipcheckers_saveState(app, model);
                         flipcheckers_drawBoard(model);
                     }

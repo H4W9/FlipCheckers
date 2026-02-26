@@ -1,5 +1,7 @@
 #include "flipcheckers.h"
 #include "helpers/flipcheckers_haptic.h"
+#include "helpers/flipcheckers_file.h"
+#include "helpers/flipcheckers_sound.h"
 
 bool flipcheckers_custom_event_callback(void* context, uint32_t event) {
     furi_assert(context);
@@ -74,11 +76,14 @@ FlipCheckers* flipcheckers_app_alloc() {
     view_dispatcher_set_custom_event_callback(
         app->view_dispatcher, flipcheckers_custom_event_callback);
 
-    // Settings
+    // Settings defaults
     app->haptic = FlipCheckersHapticOn;
+    app->sound = FlipCheckersSoundOff;
     app->white_mode = FlipCheckersPlayerHuman;
     app->black_mode = FlipCheckersPlayerAI1;
     app->must_jump = FlipCheckersMustJumpOn;
+    // Load saved settings (overrides defaults if file exists)
+    flipcheckers_load_settings(app);
 
     // Main menu
     app->import_game = 0;

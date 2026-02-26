@@ -644,9 +644,9 @@ static inline void SCL_drawBoard(
                     if(pixelRow == 0 || pixelRow == 7) {
                         byte = 0x00; // 1-pixel vertical padding for 6x6 piece
                     } else if(isKingPiece) {
-                        byte = isWhite ? _scl_spriteKing[pixelRow - 1] : _scl_spriteKingB[pixelRow - 1];
+                        byte = isWhite ? _scl_spriteKingB[pixelRow - 1] : _scl_spriteKing[pixelRow - 1];
                     } else {
-                        byte = isWhite ? _scl_spriteMan[pixelRow - 1] : _scl_spriteManB[pixelRow - 1];
+                        byte = isWhite ? _scl_spriteManB[pixelRow - 1] : _scl_spriteMan[pixelRow - 1];
                     }
                 }
 
@@ -655,8 +655,8 @@ static inline void SCL_drawBoard(
                     else byte |= 0x81;
                 }
                 if(isSelected) {
-                    if(pixelRow == 0 || pixelRow == 7) byte = 0xFF;
-                    else byte |= 0x81;
+                    if(pixelRow <= 1 || pixelRow >= 6) byte = 0xFF;
+                    else byte |= 0xC3;
                 }
 
                 // Output 8 pixels

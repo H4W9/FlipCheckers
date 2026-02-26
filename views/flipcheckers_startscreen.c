@@ -55,9 +55,10 @@ void flipcheckers_startscreen_draw(Canvas* canvas, FlipCheckersStartscreenModel*
     // Outer border
     canvas_draw_frame(canvas, 1, 1, 126, 62);
 
-    // === Title: "CHECKERS" bold large ===
+    // === Title: "CHECKERS" bold large, version right-aligned on same baseline ===
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 14, 16, "CHECKERS");
+    canvas_draw_str_aligned(canvas, 113, 16, AlignRight, AlignBottom, FLIPCHECKERS_VERSION);
 
     // Double underline beneath title
     canvas_draw_line(canvas, 14, 18, 113, 18);
@@ -78,10 +79,9 @@ void flipcheckers_startscreen_draw(Canvas* canvas, FlipCheckersStartscreenModel*
     // === Divider ===
     canvas_draw_line(canvas, 4, 41, 123, 41);
 
-    // === Bottom: version left, prompt right ===
+    // === Bottom: "Press OK to play" centered ===
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 6, 55, FLIPCHECKERS_VERSION);
-    canvas_draw_str(canvas, 44, 55, "Press OK to play");
+    canvas_draw_str_aligned(canvas, 64, 55, AlignCenter, AlignBottom, "Press OK to play");
 }
 
 static void flipcheckers_startscreen_model_init(FlipCheckersStartscreenModel* const model) {

@@ -1,5 +1,34 @@
 #include "../flipcheckers.h"
 #include <lib/toolbox/value_index.h>
+#include "../helpers/flipcheckers_file.h"
+
+#define FLIPCHECKERS_SETTINGS_FILE_NAME "settings.txt"
+
+void flipcheckers_save_settings(FlipCheckers* app) {
+    char s[12] = {0};
+    s[0] = '0' + (char)app->haptic;
+    s[1] = ',';
+    s[2] = '0' + (char)app->white_mode;
+    s[3] = ',';
+    s[4] = '0' + (char)app->black_mode;
+    s[5] = ',';
+    s[6] = '0' + (char)app->must_jump;
+    s[7] = ',';
+    s[8] = '0' + (char)app->sound;
+    s[9] = '\0';
+    flipcheckers_save_file(s, FlipCheckersFileOther, FLIPCHECKERS_SETTINGS_FILE_NAME, false, true);
+}
+
+void flipcheckers_load_settings(FlipCheckers* app) {
+    char s[16] = {0};
+    if(flipcheckers_load_file(s, FlipCheckersFileOther, FLIPCHECKERS_SETTINGS_FILE_NAME)) {
+        if(s[0] >= '0' && s[0] <= '1') app->haptic     = s[0] - '0';
+        if(s[2] >= '0' && s[2] <= '3') app->white_mode = s[2] - '0';
+        if(s[4] >= '0' && s[4] <= '3') app->black_mode = s[4] - '0';
+        if(s[6] >= '0' && s[6] <= '1') app->must_jump  = s[6] - '0';
+        if(s[8] >= '0' && s[8] <= '1') app->sound      = s[8] - '0';
+    }
+}
 
 #define TEXT_LABEL_ON  "ON"
 #define TEXT_LABEL_OFF "OFF"
@@ -42,6 +71,13 @@ static void flipcheckers_scene_settings_set_haptic(VariableItem* item) {
     app->haptic = haptic_value[index];
 }
 
+static void flipcheckers_scene_settings_set_sound(VariableItem* item) {
+    FlipCheckers* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+    variable_item_set_current_value_text(item, haptic_text[index]);
+    app->sound = haptic_value[index];
+}
+
 static void flipcheckers_scene_settings_set_must_jump(VariableItem* item) {
     FlipCheckers* app = variable_item_get_context(item);
     uint8_t index = variable_item_get_current_value_index(item);
@@ -73,9 +109,9 @@ void flipcheckers_scene_settings_on_enter(void* context) {
     VariableItem* item;
     uint8_t value_index;
 
-    // Red (White) player mode
+    // White player mode
     item = variable_item_list_add(
-        app->variable_item_list, "Red:", 4, flipcheckers_scene_settings_set_white_mode, app);
+        app->variable_item_list, "White:", 4, flipcheckers_scene_settings_set_white_mode, app);
     value_index = value_index_uint32(app->white_mode, player_mode_value, 4);
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, player_mode_text[value_index]);
@@ -101,6 +137,13 @@ void flipcheckers_scene_settings_on_enter(void* context) {
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, haptic_text[value_index]);
 
+    // Sound on/off
+    item = variable_item_list_add(
+        app->variable_item_list, "Sound:", 2, flipcheckers_scene_settings_set_sound, app);
+    value_index = value_index_uint32(app->sound, haptic_value, 2);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, haptic_text[value_index]);
+
     view_dispatcher_switch_to_view(app->view_dispatcher, FlipCheckersViewIdSettings);
 }
 
@@ -115,6 +158,7 @@ bool flipcheckers_scene_settings_on_event(void* context, SceneManagerEvent event
 
 void flipcheckers_scene_settings_on_exit(void* context) {
     FlipCheckers* app = context;
+    flipcheckers_save_settings(app);
     variable_item_list_set_selected_item(app->variable_item_list, 0);
     variable_item_list_reset(app->variable_item_list);
 }
