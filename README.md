@@ -31,7 +31,7 @@ This was inspired and based off of [Flipper Chess](https://github.com/xtruan/fli
 - Pieces promote to kings on reaching the back rank
 - Mandatory jump rule (configurable in Settings)
 - Save and resume games between sessions
-- Haptic/vibration feedback
+- Haptic/vibration and sound feedback
 
 ## Controls
 
@@ -49,4 +49,5 @@ This was inspired and based off of [Flipper Chess](https://github.com/xtruan/fli
 | Black | Set black player to Human or CPU (levels 1–3) |
 | Must Jump | Enforce mandatory capture rule (ON by default) |
 | Vibro/Haptic | Enable or disable vibration feedback |
+| Sound | Enable or disable sound feedback (OFF by default)|
 
